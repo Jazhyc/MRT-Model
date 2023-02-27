@@ -16,7 +16,9 @@
 
 ;; Variables for the MRT experiment
 (defvar *beat-frequency* 440)
-(defvar *beat-time* 0.5)
+(defvar *beat-time* 0.1)
+(defvar *beat-interval* 0.2)
+(defvar *time-to-respond* 1)
 
 
 ;; Experiment settings
@@ -103,13 +105,23 @@
   (loop for stim in *stimuli* do (run-trial stim))
 )
 
-(defun beat-trial ()
+(defun beat-trial (onset)
 
-    (new-tone-sound *beat-frequency* *beat-time*)
+    (new-tone-sound *beat-frequency* *beat-time* onset)
     (setf *response* nil)
-    (run 1)
     
   *response*)
+
+(defun multi-beat-trial ()
+  (let ((response nil))
+    (dotimes (i 5)
+      (setf response (beat-trial (* *beat-interval* i))))
+    response)
+    
+    (run *time-to-respond*)
+    
+)
+
 
 
 ;; Execute a trial with a given stimulus
@@ -313,10 +325,10 @@
 ==>
   =retrieval>
     state         nil ; clear retrieval buffer without strengthening chunk
-  -retrieval>
-  +retrieval>
-    isa           goal
-  - state         nil
+  ;; -retrieval>
+  ;; +retrieval>
+  ;;   isa           goal
+  ;; - state         nil
 )
 
 (p identify-stimulus
