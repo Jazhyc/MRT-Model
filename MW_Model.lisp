@@ -19,6 +19,7 @@
 (defvar *beat-time* 0.1)
 (defvar *beat-interval* 0.2)
 (defvar *time-to-respond* 1)
+(defvar *beats-before-probe* 5)
 
 
 ;; Experiment settings
@@ -110,18 +111,18 @@
     (new-tone-sound *beat-frequency* *beat-time* onset)
     (setf *response* nil)
     
-  *response*)
+  *response*
+)
 
 (defun multi-beat-trial ()
   (let ((response nil))
-    (dotimes (i 5)
+    (dotimes (i *beats-before-probe*)
       (setf response (beat-trial (* *beat-interval* i))))
     response)
     
     (run *time-to-respond*)
     
 )
-
 
 
 ;; Execute a trial with a given stimulus
@@ -329,6 +330,19 @@
   ;; +retrieval>
   ;;   isa           goal
   ;; - state         nil
+)
+
+(p hear-sound
+   =aural-location>
+     isa        audio-event
+     location   external
+  ==>
+    ?manual>
+      state     free
+    +manual>
+      isa       punch
+      hand      left
+      finger    index
 )
 
 (p identify-stimulus
