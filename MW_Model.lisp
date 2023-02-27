@@ -16,17 +16,19 @@
 
 ;; Variables for the MRT experiment
 (defvar *beat-frequency* 440)
-(defvar *beat-time* 0.1)
-(defvar *beat-interval* 0.2)
-(defvar *time-to-respond* 1)
+(defvar *beat-time* 0.2)
+(defvar *beat-interval* 0.4)
+(defvar *time-to-respond* 2)
 (defvar *beats-before-probe* 5)
+(defvar *onset-time* 0.2)
 
-
-;; Experiment settings
-(defvar *stimulus-duration* 2) ; number of seconds the stimulus is shown
-(defvar *inter-stimulus-interval* 0.5) ; number of seconds between trials
-(defvar *target-trials* 180) ; number of target trials
-(defvar *non-target-trials* 20) ; number of non-target trials
+;; Update the variables to the updated values
+(setq *beat-frequency* 440)
+(setq *beat-time* 0.2)
+(setq *beat-interval* 0.4)
+(setq *time-to-respond* 2)
+(setq *beats-before-probe* 5)
+(setq *onset-time* 0.2)
 
 (defvar *output-directory* "output") ; location where output files are stored
 (defvar *trace-to-file-only* nil) ; whether the model trace should only be saved to file and not appear in terminal
@@ -91,56 +93,17 @@
   )
 )
 
-;; Do SART experiment 1 time
-(defun do-sart ()
-  (reset)
-  (setf *all-responses* nil)
-  (setf *all-rts* nil)
-  (setf *stimuli*
-    (permute-list
-      (concatenate
-        'list
-        (make-array *target-trials* :initial-element "O")
-        (make-array *non-target-trials* :initial-element "Q"))))
-  (setf *visible* nil)
-  (loop for stim in *stimuli* do (run-trial stim))
-)
-
 (defun beat-trial (onset)
 
-    (new-tone-sound *beat-frequency* *beat-time* onset)
-    (setf *response* nil)
-    
-  *response*
+    ;; Start beat at the specified time with a delay
+    (new-tone-sound *beat-frequency* *beat-time* (+ onset *onset-time*))
 )
 
-(defun multi-beat-trial ()
-  (let ((response nil))
-    (dotimes (i *beats-before-probe*)
-      (setf response (beat-trial (* *beat-interval* i))))
-    response)
-    
-    (run *time-to-respond*)
-    
-)
+(defun multi-beat-trial (current-time)
 
+  (let ()
 
-;; Execute a trial with a given stimulus
-(defun run-trial (stim)
-  (let ((window (open-exp-window "MRT Experiment"
-                               :visible *visible*
-                               :width 300
-                               :height 300
-                               :x 300
-                               :y 300)))
-
-    (add-text-to-exp-window window
-                            stim
-                            :width 30
-                            :height 30
-                            :x 145
-                            :y 150)
-
+  ;; Get the response to the 5 beats using key-event-handler
   (add-act-r-command
     "sart-key-press"
     'key-event-handler
@@ -152,19 +115,33 @@
   (setf *trial-rt* nil)
   (setf *trial-done* nil)
 
-  (install-device window)
-  (run-full-time *stimulus-duration* *visible*)
-  (clear-exp-window)
-  (run-full-time *inter-stimulus-interval* *visible*)
+  ;; Schedule the beats
+  (dotimes (i *beats-before-probe*)
+    (beat-trial (+ (* *beat-interval* i) current-time))
+  )
+
+  ;; This creates an interface for the model to interact with
+  (install-device '("motor" "keyboard"))
+  (run-full-time *time-to-respond* *visible*)
+  (remove-device '("motor" "keyboard"))
 
   (remove-act-r-command-monitor "output-key" "sart-key-press")
-  (remove-act-r-command "sart-key-press"))
+  (remove-act-r-command "sart-key-press")
+  
+  (write *all-rts*)
+  
+  )
+    
+)
 
-  ; Prevent race conditions
-  (bt:with-lock-held
-    (*lock*)
-    (push *trial-response* *all-responses*)
-    (push *trial-rt* *all-rts*))
+(defun mrt-trial ()
+
+  (setf *all-rts* nil)
+
+  (multi-beat-trial (/ (get-time) 1000.0))
+
+  ;;? Add saving here?
+
 )
 
 ;; Register the model's key presses (ignore the model parameter)
@@ -176,7 +153,13 @@
   (*lock*)
     (setf *trial-rt* (/ (- (get-time) *trial-start*) 1000.0))
     (setf *trial-response* (string key))
-    (setf *trial-done* t))
+    (setf *trial-done* t)
+
+    ;; Add the response and rt to the list for saving
+    (push *trial-response* *all-responses*)
+    (push *trial-rt* *all-rts*)
+  )
+
 )
 
 ;; Write the behavioural results to a file
