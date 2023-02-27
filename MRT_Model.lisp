@@ -1,11 +1,5 @@
-;;  Sustained Attention to Response Task (SART)
-;;
-;;  In each trial the participant sees a letter: "O" or "Q".
-;;  They must press a key every time an O appears (90% of trials),
-;;  but withhold their response when the stimulus is a Q (10% of trials).
-;;
-;;  Cognitive Modelling Practical 2021
-;;  Updated for ACT-R 7.21 by Loran Knol
+;; Metronome Response Task (MRT) experiment
+;; Created for Cognitive Modelling Practicals, 2023
 
 
 ;;===================;;
