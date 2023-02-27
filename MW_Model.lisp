@@ -12,6 +12,12 @@
 ;;  Experiment code  ;;
 ;;===================;;
 
+(defvar *response*)
+
+;; Variables for the MRT experiment
+(defvar *beat-frequency* 440)
+(defvar *beat-time* 0.5)
+
 
 ;; Experiment settings
 (defvar *stimulus-duration* 2) ; number of seconds the stimulus is shown
@@ -97,22 +103,18 @@
   (loop for stim in *stimuli* do (run-trial stim))
 )
 
-;; Do a single SART trial with a target stimulus
-(defun do-sart-trial-o ()
-  (setf *visible* t)
-  (run-trial "O")
-)
+(defun beat-trial ()
 
-;; Do a single SART trial with a non-target stimulus
-(defun do-sart-trial-q ()
-  (setf *visible* t)
-  (run-trial "Q")
-)
+    (new-tone-sound *beat-frequency* *beat-time*)
+    (setf *response* nil)
+    (run 1)
+    
+  *response*)
 
 
 ;; Execute a trial with a given stimulus
 (defun run-trial (stim)
-  (let ((window (open-exp-window "SART Experiment"
+  (let ((window (open-exp-window "MRT Experiment"
                                :visible *visible*
                                :width 300
                                :height 300
