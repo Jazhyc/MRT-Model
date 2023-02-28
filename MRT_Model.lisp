@@ -164,8 +164,6 @@
 ;; Write the behavioural results to a file
 (defun write-results-to-file (name participant responses rts)
 
-  (write rts)
-
   (with-open-file
     (out
       (ensure-directories-exist
