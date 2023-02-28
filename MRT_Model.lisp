@@ -41,6 +41,8 @@
 (defvar *trial-done* nil)
 (defvar *all-responses* nil)
 (defvar *all-rts* nil)
+(defvar *beat-times* nil)
+(defvar *beat* nil)
 
 ;; Parallellism management
 (defvar *lock* (bt:make-lock))
@@ -74,13 +76,15 @@
       ;; Reset the global variables
       (setf *all-responses* nil)
       (setf *all-rts* nil)
+      (setf *beat-times* nil)
 
       (mrt-trial)
       (write-results-to-file
         (concatenate 'string "dat" (write-to-string participant))
         participant
         (reverse *all-responses*)
-        (reverse *all-rts*))))
+        (reverse *all-rts*)
+        (reverse *beat-times*))))
   (format t "Done~%")
 
   ; We will close *file-stream* now, so make sure *standard-output*
@@ -95,7 +99,8 @@
 (defun beat-trial (onset)
 
     ;; Start beat at the specified time with a delay
-    (new-tone-sound *beat-frequency* *beat-time* (+ onset *onset-time*))
+    (new-tone-sound *beat-frequency* *beat-time* onset)
+
 )
 
 (defun multi-beat-trial (current-time)
@@ -116,7 +121,12 @@
 
   ;; Schedule the beats
   (dotimes (i *beats-before-probe*)
-    (beat-trial (+ (* *beat-interval* i) current-time))
+
+    ;; Create a variable for the beat times
+    (setf *beat* (+ (* *beat-interval* i) *onset-time*))
+
+    (beat-trial (+ *beat* current-time))
+    (push *beat* *beat-times*)
   )
 
   ;; This creates an interface for the model to interact with
@@ -162,7 +172,7 @@
 )
 
 ;; Write the behavioural results to a file
-(defun write-results-to-file (name participant responses rts)
+(defun write-results-to-file (name participant responses rts beat-times)
 
   (with-open-file
     (out
@@ -171,12 +181,13 @@
           (make-pathname :name name :type "csv")
           *output-directory*))
       :direction :output :if-does-not-exist :create :if-exists :supersede)
-    (format out "participant, trial, beat, response, rt~%")
+    (format out "participant, trial, beat, response, rt, beat-time~%")
     (loop
       for trial from 0
       for response in responses
       for rt in rts
-      do (format out "~a, ~a, ~a, ~a, ~a~%" participant (+ (floor trial 5) 1) (+ (mod trial 5) 1) response rt)))
+      for beat in beat-times
+      do (format out "~a, ~a, ~a, ~a, ~a, ~a~%" participant (+ (floor trial 5) 1) (+ (mod trial 5) 1) response rt beat)))
 )
 
 
