@@ -15,6 +15,7 @@
 (defvar *time-to-respond* 2)
 (defvar *beats-before-probe* 5)
 (defvar *onset-time* 0.2)
+(defvar *number-of-probes* 10)
 
 ;; Update the variables to the updated values
 (setq *beat-frequency* 440)
@@ -24,7 +25,7 @@
 (setq *beats-before-probe* 5)
 (setq *onset-time* 0.2)
 
-(defvar *output-directory* "output") ; location where output files are stored
+(defvar *output-directory* "C:/Dev Projects/RUG BSC AI 2022/Cognitive Modelling Practical/MRT Model/output") ; location where output files are stored
 (defvar *trace-to-file-only* nil) ; whether the model trace should only be saved to file and not appear in terminal
 (defvar *trace-file-name* "sart-trace") ; name of file in which the trace is stored
 
@@ -45,7 +46,7 @@
 (defvar *lock* (bt:make-lock))
 
 ;; Do SART experiment n times, save trace to output file
-(defun do-sart-n (n)
+(defun mrt-n (n)
   (with-open-file
     (*file-stream*
       (ensure-directories-exist
@@ -69,11 +70,15 @@
   (dotimes (i n)
     (let ((participant (1+ i)))
       (format t "Run ~a...~%" participant)
-      (do-sart)
+
+      ;; Reset the global variables
+      (setf *all-responses* nil)
+      (setf *all-rts* nil)
+
+      (mrt-trial)
       (write-results-to-file
         (concatenate 'string "dat" (write-to-string participant))
         participant
-        *stimuli*
         (reverse *all-responses*)
         (reverse *all-rts*))))
   (format t "Done~%")
@@ -122,19 +127,19 @@
   (remove-act-r-command-monitor "output-key" "sart-key-press")
   (remove-act-r-command "sart-key-press")
   
-  (write *all-rts*)
-  
   )
     
 )
 
 (defun mrt-trial ()
 
-  (setf *all-rts* nil)
+  ;; Repeat n times
+  (dotimes (i *number-of-probes*)
 
-  (multi-beat-trial (/ (get-time) 1000.0))
+    ;; Run the trial
+    (multi-beat-trial (/ (get-time) 1000.0))
 
-  ;;? Add saving here?
+  )
 
 )
 
@@ -157,7 +162,10 @@
 )
 
 ;; Write the behavioural results to a file
-(defun write-results-to-file (name participant stimuli responses rts)
+(defun write-results-to-file (name participant responses rts)
+
+  (write rts)
+
   (with-open-file
     (out
       (ensure-directories-exist
@@ -165,13 +173,12 @@
           (make-pathname :name name :type "csv")
           *output-directory*))
       :direction :output :if-does-not-exist :create :if-exists :supersede)
-    (format out "participant, trial, stimulus, response, rt~%")
+    (format out "participant, trial, beat, response, rt~%")
     (loop
-      for trial from 1
-      for stimulus in stimuli
+      for trial from 0
       for response in responses
       for rt in rts
-      do (format out "~a, ~a, ~a, ~a, ~a~%" participant trial stimulus response rt)))
+      do (format out "~a, ~a, ~a, ~a, ~a~%" participant (+ (floor trial 5) 1) (+ (mod trial 5) 1) response rt)))
 )
 
 
