@@ -15,15 +15,34 @@
 (defvar *time-to-respond* 2)
 (defvar *beats-before-probe* 5)
 (defvar *onset-time* 0.2)
+(defvar *number-of-ticks 26)
+
+;; Number of probes that there must be in the experiment
 (defvar *number-of-probes* 10)
 
 ;; Update the variables to the updated values
 (setq *beat-frequency* 440)
-(setq *beat-time* 0.2)
-(setq *beat-interval* 0.4)
-(setq *time-to-respond* 2)
+
+;; How long the beats persist
+(setq *beat-time* 0.075)
+
+;; How long the beats are apart
+(setq *beat-interval* 1.3)
+
+;; How long the participant has to respond
+(setq *time-to-respond* 7)
+
+;; How many beats before the probe
 (setq *beats-before-probe* 5)
-(setq *onset-time* 0.2)
+
+;; Start of the first beat
+(setq *onset-time* 0.650)
+
+;; Set the number of probes
+(setq *number-of-probes* 10)
+
+;; Threshold for the model to press the key
+(setq *number-of-ticks* 27)
 
 (defvar *output-directory* "C:/Dev Projects/RUG BSC AI 2022/Cognitive Modelling Practical/MRT Model/output") ; location where output files are stored
 (defvar *trace-to-file-only* nil) ; whether the model trace should only be saved to file and not appear in terminal
@@ -47,7 +66,7 @@
 ;; Parallellism management
 (defvar *lock* (bt:make-lock))
 
-;; Do SART experiment n times, save trace to output file
+;; Do MRT experiment n times, save trace to output file
 (defun mrt-n (n)
   (with-open-file
     (*file-stream*
@@ -238,7 +257,8 @@
   (attend isa goal state attend)
 
   ; New chunk for implementing mind wandering
-  (wander isa goal state wander)
+  ;; Let's focus on the attend state first
+  ;; (wander isa goal state wander)
 
   (identify isa subgoal step identify)
   (get-response isa subgoal step get-response)
@@ -284,7 +304,7 @@
 
 ; Attend and wander have equal base activation
   (attend      10000  -10000)
-  (wander      10000  -10000)
+  ;; (wander      10000  -10000)
 
   (press-on-O    10000  -10000)
   (withhold-on-Q  10000  -10000)
@@ -316,26 +336,88 @@
     buffer        empty
   ?visual>
   - scene-change  T
+  =temporal>
+    isa time
+    ticks =ticks
 ==>
+  !output! (Current tick counter is =ticks)
   =retrieval>
     state         nil ; clear retrieval buffer without strengthening chunk
-  ;; -retrieval>
-  ;; +retrieval>
-  ;;   isa           goal
-  ;; - state         nil
+  -retrieval>
+  +retrieval>
+    isa           goal
+  - state         nil
 )
 
-(p hear-sound
-   =aural-location>
-     isa        audio-event
-     location   external
+;; Production that is fired when the threshold is reached
+;; Currently executed all the time
+(p on-rhythm
+  =temporal>
+    isa time
+    >= ticks 26
+    ticks =ticks
   ==>
-    ?manual>
-      state     free
-    +manual>
-      isa       punch
-      hand      left
-      finger    index
+  !output! (the button was pressed at =ticks)
+  ?manual>
+    state     free
+  +manual>
+    isa       punch
+    hand      left
+    finger    index
+  
+  ;; Resets threshold
+  +temporal>
+    isa time
+)
+
+;; Production used to reset the threshold which allows the model to correct itself
+(p hear-sound
+  =aural-location>
+    isa        audio-event
+    location   external
+  =temporal>
+    isa time
+    ticks =ticks
+  ==>
+  !output! (the tick counter was =ticks when model heard sound)
+  ;; Reset ticks
+  +temporal>
+    isa time
+)
+
+;; Production that is fired when the model first hears a sound
+(p start-counting
+  =aural-location>
+    isa        audio-event
+    location   external
+  ==>
+  !output! (Model Started Counting)
+  +temporal>
+    isa time
+  +manual>
+    isa       punch
+    hand      left
+    finger    index
+)
+
+;; Production used to reset the threshold when the model is too late
+(p hear-sound-and-press
+  =aural-location>
+    isa        audio-event
+    location   external
+  =temporal>
+    isa time
+    ticks =ticks
+    >= ticks 18
+  ==>
+  !output! (the tick counter was =ticks when the model was late)
+  +manual>
+    isa       punch
+    hand      left
+    finger    index
+  ;; Reset ticks
+  +temporal>
+    isa time
 )
 
 (p identify-stimulus
