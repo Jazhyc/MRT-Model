@@ -30,7 +30,7 @@
 (setq *beat-interval* 1.3)
 
 ;; How long the participant has to respond
-(setq *time-to-respond* 7)
+(setq *time-to-respond* 7.3)
 
 ;; How many beats before the probe
 (setq *beats-before-probe* 5)
@@ -257,7 +257,6 @@
   (attend isa goal state attend)
 
   ; New chunk for implementing mind wandering
-  ;; Let's focus on the attend state first
   ;; (wander isa goal state wander)
 
   (counting isa subgoal step counting)
@@ -304,7 +303,7 @@
 
 ; Attend and wander have equal base activation
   (attend      10000  -10000)
-  ;; (wander      10000  -10000)
+  (wander      10000  -10000)
 
   (press-on-O    10000  -10000)
   (withhold-on-Q  10000  -10000)
@@ -421,91 +420,6 @@
     isa time
 )
 
-(p identify-stimulus
-  ?goal>
-    buffer      empty
-  =retrieval>
-    isa         goal
-    state       attend
-  =visual-location>
-  ?visual>
-    state       free
-==>
-  +visual>
-    isa         move-attention
-    screen-pos  =visual-location
-  +goal>
-    isa         subgoal
-    step        get-response
-  =retrieval>
-    state       nil ; clear retrieval buffer without strengthening chunk
-  -retrieval>
-)
-
-(p retrieve-response
-  =goal>
-    isa       subgoal
-    step      get-response
-  =visual>
-    isa       text
-    value     =letter
-  ?visual>
-    state     free
-  ?retrieval>
-    state     free
-==>
-  +retrieval>
-    isa       srmapping
-    stimulus  =letter
-  +goal>
-    isa       subgoal
-    step      make-response
-  +visual>
-    isa       clear-scene-change
-)
-
-(p respond-if-O
-  =goal>
-    isa       subgoal
-    step      make-response
-  =retrieval>
-    isa       srmapping
-    stimulus  =letter
-    hand      =hand
-  ?manual>
-    state     free
-==>
-  +manual>
-    isa       punch
-    hand      =hand
-    finger    index
-  -goal>
-  -visual-location>
-  -visual>
-  +retrieval>
-    isa       goal
-  - state     nil
-)
-
-(p do-not-respond-if-Q
-  =goal>
-    isa       subgoal
-    step      make-response
-  =retrieval>
-    isa       srmapping
-    stimulus  =letter
-    hand      nil
-  ?manual>
-    state     free
-==>
-  -goal>
-  -visual-location>
-  -visual>
-  +retrieval>
-    isa       goal
-  - state     nil
-)
-
 (goal-focus startgoal)
 
 ; Productions for mind wandering are located here
@@ -516,8 +430,6 @@
   ?retrieval>
     state         free
   - state         error
-  ?goal>
-    buffer        empty
 ==>
   +goal>
 		isa			subgoal
@@ -547,14 +459,9 @@
   - state     error
 ==>
   -retrieval>
-  +retrieval>
-    isa       goal
-    state     attend
-
-    ; Resets the declarative finsts
-    ;; :recently-retrieved reset
-
-  -goal>
+  +goal>
+		isa			subgoal
+		step		remember
 )
 
 ; Production that is fired when the model retrieves a random memory
@@ -576,35 +483,6 @@
     isa 		memory
 	-	type			nil
     :recently-retrieved nil
-)
-
-; Default response that is executed when the model is mind wandering
-(p lazy-response	
-	=goal>
-		isa			subgoal
-		step		remember
-	?visual>
-		scene-change T
-    state free
-	=visual-location>
-	?manual>
-		state 		free
-  ?retrieval>
-    state         free
-  - state         error
-==>
-  +manual>
-    isa       punch
-    hand      left
-    finger    index
-	-visual-location>
-	-visual>
-  -retrieval>
-  +retrieval>
-    isa 		memory
-	-	type			nil
-    :recently-retrieved nil
-  
 )
 
 )
