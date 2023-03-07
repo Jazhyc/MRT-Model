@@ -260,7 +260,7 @@
   ;; Let's focus on the attend state first
   ;; (wander isa goal state wander)
 
-  (identify isa subgoal step identify)
+  (counting isa subgoal step counting)
   (get-response isa subgoal step get-response)
   (make-response isa subgoal step make-response)
   (remember isa subgoal step remember)
@@ -319,31 +319,23 @@
     state    free
   - state    error
 ==>
-  +retrieval>
-    isa      goal
-    state    attend
-  -goal>
+  +goal>
+    isa     subgoal
+    step    counting
 )
 
 (p check-current-goal
-  =retrieval>
-    isa           goal
-    state         attend
+  =goal>
+    isa     subgoal
+    step    counting
   ?retrieval>
     state         free
   - state         error
-  ?goal>
-    buffer        empty
-  ?visual>
-  - scene-change  T
   =temporal>
     isa time
     ticks =ticks
 ==>
-  !output! (Current tick counter is =ticks)
-  =retrieval>
-    state         nil ; clear retrieval buffer without strengthening chunk
-  -retrieval>
+  !output! (the tick counter was =ticks when model checked current goal)
   +retrieval>
     isa           goal
   - state         nil
@@ -371,7 +363,11 @@
 )
 
 ;; Production used to reset the threshold which allows the model to correct itself
+;; Only used when attending
 (p hear-sound
+  =goal>
+    isa     subgoal
+    step    counting
   =aural-location>
     isa        audio-event
     location   external
@@ -385,11 +381,13 @@
     isa time
 )
 
-;; Production that is fired when the model first hears a sound
+;; Production that is only fired when the model first hears a sound
 (p start-counting
   =aural-location>
     isa        audio-event
     location   external
+  ?temporal>
+    buffer     empty
   ==>
   !output! (Model Started Counting)
   +temporal>
@@ -402,13 +400,16 @@
 
 ;; Production used to reset the threshold when the model is too late
 (p hear-sound-and-press
+  =goal>
+    isa     subgoal
+    step    counting
   =aural-location>
     isa        audio-event
     location   external
   =temporal>
     isa time
     ticks =ticks
-    >= ticks 18
+    >= ticks 21
   ==>
   !output! (the tick counter was =ticks when the model was late)
   +manual>
