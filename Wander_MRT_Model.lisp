@@ -30,7 +30,7 @@
 (setq *beat-interval* 1.3)
 
 ;; How long the participant has to respond
-(setq *time-to-respond* 7)
+(setq *time-to-respond* 6.5)
 
 ;; How many beats before the probe
 (setq *beats-before-probe* 5)
@@ -142,9 +142,9 @@
   (dotimes (i *beats-before-probe*)
 
     ;; Create a variable for the beat times
-    (setf *beat* (+ (* *beat-interval* i) *onset-time*))
+    (setf *beat* (+ (+ (* *beat-interval* i) *onset-time*) current-time))
 
-    (beat-trial (+ *beat* current-time))
+    (beat-trial *beat*)
     (push *beat* *beat-times*)
   )
 
@@ -179,7 +179,7 @@
   ; Prevent race conditions
   (bt:with-lock-held
   (*lock*)
-    (setf *trial-rt* (/ (- (get-time) *trial-start*) 1000.0))
+    (setf *trial-rt* (/ (get-time) 1000.0))
     (setf *trial-response* (string key))
     (setf *trial-done* t)
 
@@ -240,7 +240,7 @@
 
 (chunk-type beginning label)
 (chunk-type goal state)
-(chunk-type subgoal step)
+(chunk-type subgoal step pressed)
 (chunk-type srmapping stimulus hand)
 
 ; New chunk type for mind wandering
@@ -259,7 +259,7 @@
   ; New chunk for implementing mind wandering
   (wander isa goal state wander)
 
-  (counting isa subgoal step counting)
+  (counting isa subgoal step counting pressed nil)
   (get-response isa subgoal step get-response)
   (make-response isa subgoal step make-response)
   (remember isa subgoal step remember)
@@ -267,35 +267,35 @@
   ; Create chunks for mind wandering
   (dattend isa memory type dattend)
   (d1 isa memory type d1)
-  (d2 isa memory type d2)
-  (d3 isa memory type d3)
-  (d4 isa memory type d4)
-  (d5 isa memory type d5)
-  (d6 isa memory type d6)
-  (d7 isa memory type d7)
-  (d8 isa memory type d8)
-  (d9 isa memory type d4)
-  (d10 isa memory type d10)
-  (d11 isa memory type d11)
-  (d12 isa memory type d12)
-  (d13 isa memory type d13)
-  (d14 isa memory type d14)
-  (d15 isa memory type d15)
-  (d16 isa memory type d16)
-  (d17 isa memory type d17)
-  (d18 isa memory type d18)
-  (d19 isa memory type d19)
-  (d20 isa memory type d20)
-  (d21 isa memory type d21)
-  (d22 isa memory type d22)
-  (d23 isa memory type d23)
-  (d24 isa memory type d24)
-  (d25 isa memory type d25)
-  (d26 isa memory type d26)
-  (d27 isa memory type d27)
-  (d28 isa memory type d28)
-  (d29 isa memory type d29)
-  (d30 isa memory type d30)
+  ;; (d2 isa memory type d2)
+  ;; (d3 isa memory type d3)
+  ;; (d4 isa memory type d4)
+  ;; (d5 isa memory type d5)
+  ;; (d6 isa memory type d6)
+  ;; (d7 isa memory type d7)
+  ;; (d8 isa memory type d8)
+  ;; (d9 isa memory type d9)
+  ;; (d10 isa memory type d10)
+  ;; (d11 isa memory type d11)
+  ;; (d12 isa memory type d12)
+  ;; (d13 isa memory type d13)
+  ;; (d14 isa memory type d14)
+  ;; (d15 isa memory type d15)
+  ;; (d16 isa memory type d16)
+  ;; (d17 isa memory type d17)
+  ;; (d18 isa memory type d18)
+  ;; (d19 isa memory type d19)
+  ;; (d20 isa memory type d20)
+  ;; (d21 isa memory type d21)
+  ;; (d22 isa memory type d22)
+  ;; (d23 isa memory type d23)
+  ;; (d24 isa memory type d24)
+  ;; (d25 isa memory type d25)
+  ;; (d26 isa memory type d26)
+  ;; (d27 isa memory type d27)
+  ;; (d28 isa memory type d28)
+  ;; (d29 isa memory type d29)
+  ;; (d30 isa memory type d30)
 
 )
 
@@ -321,6 +321,7 @@
   +goal>
     isa     subgoal
     step    counting
+    pressed nil
 )
 
 (p check-current-goal
@@ -342,15 +343,47 @@
 
 ;; Production that is fired when the threshold is reached
 ;; Currently executed all the time
-(p on-rhythm
+(p on-rhythm-attend
+  =goal>
+    isa     subgoal
+    step    counting
+    pressed nil
   =temporal>
     isa time
     >= ticks 26
     ticks =ticks
-  ==>
-  !output! (the button was pressed at =ticks)
   ?manual>
     state     free
+  ==>
+  !output! (the button was pressed at =ticks during attend)
+  +manual>
+    isa       punch
+    hand      left
+    finger    index
+  
+  ;; Resets threshold
+  +temporal>
+    isa time
+
+  ;; Make the model register that it has pressed the button
+  +goal>
+    isa     subgoal
+    step    counting
+    pressed t
+)
+
+(p on-rhythm-wander
+  =goal>
+    isa     subgoal
+    step    remember
+  =temporal>
+    isa time
+    >= ticks 26
+    ticks =ticks
+  ?manual>
+    state     free
+  ==>
+  !output! (the button was pressed at =ticks during mind wandering)
   +manual>
     isa       punch
     hand      left
@@ -363,10 +396,11 @@
 
 ;; Production used to reset the threshold which allows the model to correct itself
 ;; Only used when attending
-(p hear-sound
+(p hear-sound-early
   =goal>
     isa     subgoal
     step    counting
+    pressed t
   =aural-location>
     isa        audio-event
     location   external
@@ -374,10 +408,15 @@
     isa time
     ticks =ticks
   ==>
-  !output! (the tick counter was =ticks when model heard sound)
+  !output! (the tick counter was =ticks when model heard sound and already pressed the button)
   ;; Reset ticks
   +temporal>
     isa time
+  -goal>
+  +goal>
+    isa     subgoal
+    step    counting
+    pressed nil
 )
 
 ;; Production that is only fired when the model first hears a sound
@@ -402,15 +441,15 @@
   =goal>
     isa     subgoal
     step    counting
+    pressed nil
   =aural-location>
     isa        audio-event
     location   external
   =temporal>
     isa time
     ticks =ticks
-    >= ticks 21
   ==>
-  !output! (the tick counter was =ticks when the model was late)
+  !output! (the tick counter was =ticks when the model was late and did not press the button)
   +manual>
     isa       punch
     hand      left
@@ -443,7 +482,7 @@
 
     ; This enables the model to only think of a memory that it has not recently remembered
     ; It is limited by the number of declarative finsts
-    :recently-retrieved nil
+    ;; :recently-retrieved nil
 )
 
 ; Production that reminds the model to go back to the task
@@ -459,9 +498,12 @@
   - state     error
 ==>
   -retrieval>
+
+  ;; By setting the pressed variable to t, we force the model to wait for the beat
   +goal>
 		isa			subgoal
-		step		remember
+		step		counting
+    pressed t
 )
 
 ; Production that is fired when the model retrieves a random memory
@@ -482,7 +524,7 @@
   +retrieval>
     isa 		memory
 	-	type			nil
-    :recently-retrieved nil
+    ;; :recently-retrieved nil
 )
 
 )
