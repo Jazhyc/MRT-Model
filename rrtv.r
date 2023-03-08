@@ -73,3 +73,4 @@ ggplot(data = plotMeans, aes(y=mean, x=condition, ymin=mean-error, ymax=mean+err
   geom_col(width=0.7) +
   geom_errorbar(width=0.1) +
   labs(y="Transformed RRT Variance", x="Model Type")
+

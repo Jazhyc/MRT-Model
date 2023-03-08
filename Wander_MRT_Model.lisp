@@ -15,7 +15,6 @@
 (defvar *time-to-respond* 2)
 (defvar *beats-before-probe* 5)
 (defvar *onset-time* 0.2)
-(defvar *number-of-ticks 26)
 
 ;; Number of probes that there must be in the experiment
 (defvar *number-of-probes* 10)
@@ -41,10 +40,7 @@
 ;; Set the number of probes
 (setq *number-of-probes* 10)
 
-;; Threshold for the model to press the key
-(setq *number-of-ticks* 27)
-
-(defvar *output-directory* "C:/Dev Projects/RUG BSC AI 2022/Cognitive Modelling Practical/MRT Model/output") ; location where output files are stored
+(defvar *output-directory* "C:/Dev Projects/RUG BSC AI 2022/Cognitive Modelling Practical/MRT Model/output-wander/") ; location where output files are stored
 (defvar *trace-to-file-only* nil) ; whether the model trace should only be saved to file and not appear in terminal
 (defvar *trace-file-name* "sart-trace") ; name of file in which the trace is stored
 
@@ -239,6 +235,10 @@
   ; number of finsts for declarative memory
   ; Based on research
   :declarative-num-finsts 4
+
+  ;; Affects noisiness of the ticks
+  ;; :time-noise 0.005
+
 )
 
 (chunk-type beginning label)
@@ -270,6 +270,10 @@
   ; Create chunks for mind wandering
   (dattend isa memory type dattend)
   (d1 isa memory type d1)
+  (d2 isa memory type d2)
+  (d3 isa memory type d3)
+  (d4 isa memory type d4)
+  (d5 isa memory type d5)
 
 )
 
@@ -326,7 +330,7 @@
     pressed nil
   =temporal>
     isa time
-    >= ticks 26
+    >= ticks 27
     ticks =ticks
   ?manual>
     state     free
@@ -346,28 +350,6 @@
     isa     subgoal
     step    counting
     pressed t
-)
-
-(p on-rhythm-wander
-  =goal>
-    isa     subgoal
-    step    remember
-  =temporal>
-    isa time
-    >= ticks 26
-    ticks =ticks
-  ?manual>
-    state     free
-  ==>
-  !output! (the button was pressed at =ticks during mind wandering)
-  +manual>
-    isa       punch
-    hand      left
-    finger    index
-  
-  ;; Resets threshold
-  +temporal>
-    isa time
 )
 
 ;; Production used to reset the threshold which allows the model to correct itself
@@ -422,6 +404,28 @@
 
 ; Productions for mind wandering are located here
 ; Mind wandering can only start from the counting state
+(p on-rhythm-wander
+  =goal>
+    isa     subgoal
+    step    remember
+  =temporal>
+    isa time
+    >= ticks 26
+    ticks =ticks
+  ?manual>
+    state     free
+  ==>
+  !output! (the button was pressed at =ticks during mind wandering)
+  +manual>
+    isa       punch
+    hand      left
+    finger    index
+  
+  ;; Resets threshold
+  +temporal>
+    isa time
+)
+
 (p begin-wander
   =goal>
     isa    subgoal
@@ -449,7 +453,7 @@
 
     ; This enables the model to only think of a memory that it has not recently remembered
     ; It is limited by the number of declarative finsts
-    ;; :recently-retrieved nil
+    :recently-retrieved nil
 )
 
 ; Production that reminds the model to go back to the task
@@ -492,7 +496,7 @@
   +retrieval>
     isa 		memory
 	-	type			nil
-    ;; :recently-retrieved nil
+    :recently-retrieved nil
 )
 
 )

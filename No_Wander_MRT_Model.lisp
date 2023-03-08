@@ -239,6 +239,9 @@
   ; number of finsts for declarative memory
   ; Based on research
   :declarative-num-finsts 4
+
+  ;; Affects noisiness of the ticks
+  ;; :time-noise 0.005
 )
 
 (chunk-type beginning label)
@@ -326,7 +329,7 @@
     pressed nil
   =temporal>
     isa time
-    >= ticks 26
+    >= ticks 27
     ticks =ticks
   ?manual>
     state     free
