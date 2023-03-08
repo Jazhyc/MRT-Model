@@ -103,7 +103,10 @@
         participant
         (reverse *all-responses*)
         (reverse *all-rts*)
-        (reverse *beat-times*))))
+        (reverse *beat-times*)))
+
+    (reset)
+  )
   (format t "Done~%")
 
   ; We will close *file-stream* now, so make sure *standard-output*
@@ -160,7 +163,7 @@
     
 )
 
-(defun mrt-trial ()
+(defun mrt-trial ()  
 
   ;; Repeat n times
   (dotimes (i *number-of-probes*)
@@ -206,7 +209,7 @@
       for response in responses
       for rt in rts
       for beat in beat-times
-      do (format out "~a, ~a, ~a, ~a, ~a, ~a~%" participant (+ (floor trial 5) 1) (+ (mod trial 5) 1) response rt beat)))
+      do (format out "~a, ~a, ~a, ~a, ~a, ~a~%" participant (+ (floor trial 5) 1) (+ (mod trial 5) 1) response (* rt 1000) (* beat 1000))))
 )
 
 

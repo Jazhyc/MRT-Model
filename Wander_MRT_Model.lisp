@@ -103,7 +103,10 @@
         participant
         (reverse *all-responses*)
         (reverse *all-rts*)
-        (reverse *beat-times*))))
+        (reverse *beat-times*)))
+    
+    (reset)
+  )
   (format t "Done~%")
 
   ; We will close *file-stream* now, so make sure *standard-output*
@@ -206,7 +209,7 @@
       for response in responses
       for rt in rts
       for beat in beat-times
-      do (format out "~a, ~a, ~a, ~a, ~a, ~a~%" participant (+ (floor trial 5) 1) (+ (mod trial 5) 1) response rt beat)))
+      do (format out "~a, ~a, ~a, ~a, ~a, ~a~%" participant (+ (floor trial 5) 1) (+ (mod trial 5) 1) response (* rt 1000) (* beat 1000))))
 )
 
 
@@ -267,35 +270,6 @@
   ; Create chunks for mind wandering
   (dattend isa memory type dattend)
   (d1 isa memory type d1)
-  ;; (d2 isa memory type d2)
-  ;; (d3 isa memory type d3)
-  ;; (d4 isa memory type d4)
-  ;; (d5 isa memory type d5)
-  ;; (d6 isa memory type d6)
-  ;; (d7 isa memory type d7)
-  ;; (d8 isa memory type d8)
-  ;; (d9 isa memory type d9)
-  ;; (d10 isa memory type d10)
-  ;; (d11 isa memory type d11)
-  ;; (d12 isa memory type d12)
-  ;; (d13 isa memory type d13)
-  ;; (d14 isa memory type d14)
-  ;; (d15 isa memory type d15)
-  ;; (d16 isa memory type d16)
-  ;; (d17 isa memory type d17)
-  ;; (d18 isa memory type d18)
-  ;; (d19 isa memory type d19)
-  ;; (d20 isa memory type d20)
-  ;; (d21 isa memory type d21)
-  ;; (d22 isa memory type d22)
-  ;; (d23 isa memory type d23)
-  ;; (d24 isa memory type d24)
-  ;; (d25 isa memory type d25)
-  ;; (d26 isa memory type d26)
-  ;; (d27 isa memory type d27)
-  ;; (d28 isa memory type d28)
-  ;; (d29 isa memory type d29)
-  ;; (d30 isa memory type d30)
 
 )
 
