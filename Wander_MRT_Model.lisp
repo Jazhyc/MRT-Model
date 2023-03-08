@@ -296,6 +296,8 @@
     isa     subgoal
     step    counting
     pressed nil
+  +temporal>
+    isa time
 )
 
 (p check-current-goal
@@ -393,23 +395,6 @@
     pressed nil
 )
 
-;; Production that is only fired when the model first hears a sound
-(p start-counting
-  =aural-location>
-    isa        audio-event
-    location   external
-  ?temporal>
-    buffer     empty
-  ==>
-  !output! (Model Started Counting)
-  +temporal>
-    isa time
-  +manual>
-    isa       punch
-    hand      left
-    finger    index
-)
-
 ;; Production used to reset the threshold when the model is too late
 (p hear-sound-and-press
   =goal>
@@ -436,7 +421,12 @@
 (goal-focus startgoal)
 
 ; Productions for mind wandering are located here
+; Mind wandering can only start from the counting state
 (p begin-wander
+  =goal>
+    isa    subgoal
+    step   counting
+    pressed =pressed
   =retrieval>
     isa           goal
     state         wander
@@ -444,9 +434,12 @@
     state         free
   - state         error
 ==>
+
+  ;; We assume that the model still has knowledge of whether or not it has pressed the button
   +goal>
 		isa			subgoal
 		step		remember
+    pressed =pressed
   =retrieval>
     state         nil ; clear retrieval buffer without strengthening chunk
   -retrieval>
@@ -464,6 +457,7 @@
   =goal>
     isa       subgoal
     step      remember
+    pressed   =pressed
   =retrieval>
     isa       memory
     type      dattend
@@ -477,7 +471,7 @@
   +goal>
 		isa			subgoal
 		step		counting
-    pressed t
+    pressed =pressed
 )
 
 ; Production that is fired when the model retrieves a random memory
