@@ -407,7 +407,7 @@
     step    remember
   =temporal>
     isa time
-    >= ticks 26
+    >= ticks 27
     ticks =ticks
   ?manual>
     state     free
