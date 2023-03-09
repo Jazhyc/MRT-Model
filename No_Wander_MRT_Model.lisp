@@ -44,7 +44,8 @@
 ;; Threshold for the model to press the key
 (setq *number-of-ticks* 27)
 
-(defvar *output-directory* "C:/Dev Projects/RUG BSC AI 2022/Cognitive Modelling Practical/MRT Model/output") ; location where output files are stored
+(defvar *output-directory* "C:/Dev Projects/RUG BSC AI 2022/Cognitive Modelling Practical/MRT Model/output-nowander/") ; location where output files are stored
+(setq *output-directory* "C:/Dev Projects/RUG BSC AI 2022/Cognitive Modelling Practical/MRT Model/output-nowander/")
 (defvar *trace-to-file-only* nil) ; whether the model trace should only be saved to file and not appear in terminal
 (defvar *trace-file-name* "sart-trace") ; name of file in which the trace is stored
 
@@ -240,6 +241,9 @@
   ; Based on research
   :declarative-num-finsts 4
 
+  ;; Prervent the trace log from being filled with tick increments
+  :record-ticks nil
+
   ;; Affects noisiness of the ticks
   ;; :time-noise 0.005
 )
@@ -247,7 +251,6 @@
 (chunk-type beginning label)
 (chunk-type goal state)
 (chunk-type subgoal step pressed)
-(chunk-type srmapping stimulus hand)
 
 ; New chunk type for mind wandering
 (chunk-type memory type)
@@ -256,9 +259,6 @@
   (start isa chunk)
 
   ; Add some chunks for mind wandering
-
-  (press-on-O isa srmapping stimulus "O" hand left)
-  (withhold-on-Q isa srmapping stimulus "Q" hand nil)
   (startgoal isa beginning label start)
   (attend isa goal state attend)
 
@@ -266,8 +266,6 @@
   ;; (wander isa goal state wander)
 
   (counting isa subgoal step counting pressed nil)
-  (get-response isa subgoal step get-response)
-  (make-response isa subgoal step make-response)
   (remember isa subgoal step remember)
 
   ; Create chunks for mind wandering
@@ -281,9 +279,6 @@
 ; Attend and wander have equal base activation
   (attend      10000  -10000)
   ;; (wander      10000  -10000)
-
-  (press-on-O    10000  -10000)
-  (withhold-on-Q  10000  -10000)
 )
 
 (p start-task
@@ -314,7 +309,7 @@
     isa time
     ticks =ticks
 ==>
-  !output! (the tick counter was =ticks when model checked current goal)
+  !output! (The tick counter was =ticks when the model checked the current goal)
   +retrieval>
     isa           goal
   - state         nil
