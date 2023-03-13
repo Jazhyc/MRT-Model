@@ -16,9 +16,12 @@
 (defvar *beats-before-probe* 5)
 (defvar *onset-time* 0.2)
 (defvar *number-of-ticks 26)
+(defvar *beats-per-block* 50)
 
 ;; Number of probes that there must be in the experiment
-(defvar *number-of-probes* 10)
+(defvar *number-of-probes* 18)
+
+(setq *beats-per-block* 50)
 
 ;; Update the variables to the updated values
 (setq *beat-frequency* 440)
@@ -30,7 +33,7 @@
 (setq *beat-interval* 1.3)
 
 ;; How long the participant has to respond
-(setq *time-to-respond* 6.5)
+(setq *time-to-respond* 65)
 
 ;; How many beats before the probe
 (setq *beats-before-probe* 5)
@@ -39,7 +42,7 @@
 (setq *onset-time* 0.650)
 
 ;; Set the number of probes
-(setq *number-of-probes* 10)
+(setq *number-of-probes* 1)
 
 ;; Threshold for the model to press the key
 (setq *number-of-ticks* 27)
@@ -63,6 +66,9 @@
 (defvar *all-rts* nil)
 (defvar *beat-times* nil)
 (defvar *beat* nil)
+(defvar *remaining-beats* nil)
+(defvar *probe-location* nil)
+(defvar *probe-response* nil)
 
 ;; Parallellism management
 (defvar *lock* (bt:make-lock))
@@ -130,7 +136,9 @@
 
   (let ()
 
-  ;; Get the response to the 5 beats using key-event-handler
+  (setf *probe-response* nil)
+
+  ;; Get the response to the 50 beats using key-event-handler
   (add-act-r-command
     "sart-key-press"
     'key-event-handler
@@ -142,8 +150,14 @@
   (setf *trial-rt* nil)
   (setf *trial-done* nil)
 
+  ;; Generate probe's position
+  (setf *probe-location* (+ 5 (random (- *beats-per-block* 5)))) ;; 5 to 50?
+  (setf *remaining-beats* (- *beats-per-block* *probe-location*))
+
+  (print (concatenate 'string "Probe location: " (write-to-string *probe-location*) " Remaining beats: " (write-to-string *remaining-beats*)))
+
   ;; Schedule the beats
-  (dotimes (i *beats-before-probe*)
+  (dotimes (i *probe-location*)
 
     ;; Create a variable for the beat times
     (setf *beat* (+ (+ (* *beat-interval* i) *onset-time*) current-time))
@@ -152,6 +166,13 @@
     (push *beat* *beat-times*)
   )
 
+  ;; Create a handler to detect the probe
+  (add-act-r-command
+    "probe-key-press"
+    'probe-handler
+    "probe monitor")
+  (monitor-act-r-command "output-key" "probe-key-press")
+
   ;; This creates an interface for the model to interact with
   (install-device '("motor" "keyboard"))
   (run-full-time *time-to-respond* *visible*)
@@ -159,6 +180,8 @@
 
   (remove-act-r-command-monitor "output-key" "sart-key-press")
   (remove-act-r-command "sart-key-press")
+  (remove-act-r-command-monitor "output-key" "probe-key-press")
+  (remove-act-r-command "probe-key-press")
   
   )
     
@@ -169,8 +192,33 @@
   ;; Repeat n times
   (dotimes (i *number-of-probes*)
 
+
+
     ;; Run the trial
     (multi-beat-trial (/ (get-time) 1000.0))
+
+  )
+
+)
+
+;; Create a handler to detect the probe
+(defun probe-handler (model key)
+  (declare (ignore model))
+
+  ;; Check if the button pressed is k
+  (if (and (string= key "f") (not *probe-response*))
+
+    (setf *probe-response* "f")
+    
+    ;; Schedule the beats
+    (dotimes (i *remaining-beats*)
+
+      ;; Create a variable for the beat times
+      (setf *beat* (+ (+ (* *beat-interval* i) *onset-time*) (get-time)))
+
+      (beat-trial *beat*)
+      (push *beat* *beat-times*)
+    )
 
   )
 
