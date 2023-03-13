@@ -15,9 +15,13 @@
 (defvar *time-to-respond* 2)
 (defvar *beats-before-probe* 5)
 (defvar *onset-time* 0.2)
+(defvar *number-of-ticks 26)
+(defvar *beats-per-block* 50)
 
 ;; Number of probes that there must be in the experiment
-(defvar *number-of-probes* 10)
+(defvar *number-of-probes* 18)
+
+(setq *beats-per-block* 50)
 
 ;; Update the variables to the updated values
 (setq *beat-frequency* 440)
@@ -29,7 +33,7 @@
 (setq *beat-interval* 1.3)
 
 ;; How long the participant has to respond
-(setq *time-to-respond* 6.5)
+(setq *time-to-respond* 65)
 
 ;; How many beats before the probe
 (setq *beats-before-probe* 5)
@@ -38,11 +42,13 @@
 (setq *onset-time* 0.650)
 
 ;; Set the number of probes
-(setq *number-of-probes* 10)
+(setq *number-of-probes* 18)
+
+;; Threshold for the model to press the key
+(setq *number-of-ticks* 27)
 
 (defvar *output-directory* "C:/Dev Projects/RUG BSC AI 2022/Cognitive Modelling Practical/MRT Model/output-wander/") ; location where output files are stored
-(setq *output-directory* "C:/Dev Projects/RUG BSC AI 2022/Cognitive Modelling Practical/MRT Model/output-wander/") ;; Force the output directory to change
-
+(setq *output-directory* "C:/Dev Projects/RUG BSC AI 2022/Cognitive Modelling Practical/MRT Model/output-wander/")
 (defvar *trace-to-file-only* nil) ; whether the model trace should only be saved to file and not appear in terminal
 (defvar *trace-file-name* "sart-trace") ; name of file in which the trace is stored
 
@@ -60,6 +66,10 @@
 (defvar *all-rts* nil)
 (defvar *beat-times* nil)
 (defvar *beat* nil)
+(defvar *remaining-beats* nil)
+(defvar *probe-location* nil)
+(defvar *probe-response* nil)
+(defvar *probe-list* nil)
 
 ;; Parallellism management
 (defvar *lock* (bt:make-lock))
@@ -94,6 +104,7 @@
       (setf *all-responses* nil)
       (setf *all-rts* nil)
       (setf *beat-times* nil)
+      (setf *probe-list* nil)
 
       (mrt-trial)
       (write-results-to-file
@@ -101,7 +112,8 @@
         participant
         (reverse *all-responses*)
         (reverse *all-rts*)
-        (reverse *beat-times*)))
+        (reverse *beat-times*)
+        (reverse *probe-list*)))
     
     (reset)
   )
@@ -127,7 +139,9 @@
 
   (let ()
 
-  ;; Get the response to the 5 beats using key-event-handler
+  (setf *probe-response* nil)
+
+  ;; Get the response to the 50 beats using key-event-handler
   (add-act-r-command
     "sart-key-press"
     'key-event-handler
@@ -139,8 +153,26 @@
   (setf *trial-rt* nil)
   (setf *trial-done* nil)
 
+  ;; Generate probe's position
+  (setf *probe-location* (+ 5 (random (- *beats-per-block* 5)))) ;; 5 to 50?
+  (setf *remaining-beats* (- *beats-per-block* *probe-location*))
+
+  (print (concatenate 'string "Probe location: " (write-to-string *probe-location*) " Remaining beats: " (write-to-string *remaining-beats*)))
+
+  ;; Add the probe to the list probe location - 5 times
+  (dotimes (i (- *probe-location* 5))
+    (push "F" *probe-list*))
+  
+  ;; Put the required beats for the probe
+  (dotimes (i 5)
+    (push "T" *probe-list*))
+  
+  ;; Mark all the remaining beats as false
+  (dotimes (i *remaining-beats*)
+    (push "F" *probe-list*))
+
   ;; Schedule the beats
-  (dotimes (i *beats-before-probe*)
+  (dotimes (i *probe-location*)
 
     ;; Create a variable for the beat times
     (setf *beat* (+ (+ (* *beat-interval* i) *onset-time*) current-time))
@@ -149,13 +181,51 @@
     (push *beat* *beat-times*)
   )
 
+  ;; Create a handler to detect the probe
+  (add-act-r-command
+    "probe-key-press"
+    'probe-handler
+    "probe monitor")
+  (monitor-act-r-command "output-key" "probe-key-press")
+
   ;; This creates an interface for the model to interact with
   (install-device '("motor" "keyboard"))
-  (run-full-time *time-to-respond* *visible*)
+
+  ;; First, get the responses for the initial beats
+  (run-full-time (* *beat-interval* *probe-location*) *visible*)
+
+  ;; Create a window for the probe
+  (let ((window (open-exp-window "MRT Experiment"
+                               :visible *visible*
+                               :width 300
+                               :height 300
+                               :x 300
+                               :y 300)))
+
+    (add-text-to-exp-window window
+                            "It's Probe Time!"
+                            :width 30
+                            :height 30
+                            :x 145
+                            :y 150)
+  
+    (install-device window)
+
+    ;; Make the window visible for 1 second
+    ;; Change it to last until the probe is pressed later
+    (run-full-time 1 *visible*)
+    (clear-exp-window)
+  
+  )
+
+  (run-full-time (* *beat-interval* *remaining-beats*) *visible*)
+
   (remove-device '("motor" "keyboard"))
 
   (remove-act-r-command-monitor "output-key" "sart-key-press")
   (remove-act-r-command "sart-key-press")
+  (remove-act-r-command-monitor "output-key" "probe-key-press")
+  (remove-act-r-command "probe-key-press")
   
   )
     
@@ -166,6 +236,8 @@
   ;; Repeat n times
   (dotimes (i *number-of-probes*)
 
+
+
     ;; Run the trial
     (multi-beat-trial (/ (get-time) 1000.0))
 
@@ -173,26 +245,46 @@
 
 )
 
+;; Create a handler to detect the probe
+;; Schedules the remaining beats
+(defun probe-handler (model key)
+
+  (declare (ignore model))
+  
+  ;; If the probe was not detected and the key pressed was "k"
+  (if (and(string= key "k") (not *probe-response*))
+      (progn ;; Required to evaluate multiple expressions
+        (print "Probe detected")
+        (setf *probe-response* "k") ;; Mark that a probe was detected
+        (dotimes (i *remaining-beats*)
+          (setf *beat* (+ (+ (* *beat-interval* i) *onset-time*) (/ (get-time) 1000)))
+          (beat-trial *beat*)
+          (push *beat* *beat-times*)))
+      nil))
+
 ;; Register the model's key presses (ignore the model parameter)
 (defun key-event-handler (model key)
   (declare (ignore model))
 
-  ; Prevent race conditions
-  (bt:with-lock-held
-  (*lock*)
-    (setf *trial-rt* (/ (get-time) 1000.0))
-    (setf *trial-response* (string key))
-    (setf *trial-done* t)
+  (if (string= key "f")
+    (progn ; Execute multiple forms
+      ;; Prevent race conditions
+      (bt:with-lock-held
+        (*lock*)
+        (setf *trial-rt* (/ (get-time) 1000.0))
+        (setf *trial-response* (string key))
+        (setf *trial-done* t)
 
-    ;; Add the response and rt to the list for saving
-    (push *trial-response* *all-responses*)
-    (push *trial-rt* *all-rts*)
-  )
+        ;; Add the response and rt to the list for saving
+        (push *trial-response* *all-responses*)
+        (push *trial-rt* *all-rts*)
+      )
+    ))
 
 )
 
 ;; Write the behavioural results to a file
-(defun write-results-to-file (name participant responses rts beat-times)
+(defun write-results-to-file (name participant responses rts beat-times probe-locations)
 
   (with-open-file
     (out
@@ -203,11 +295,13 @@
       :direction :output :if-does-not-exist :create :if-exists :supersede)
     (format out "participant, trial, beat, response, rt, beat-time~%")
     (loop
-      for trial from 0
-      for response in responses
-      for rt in rts
-      for beat in beat-times
-      do (format out "~a, ~a, ~a, ~a, ~a, ~a~%" participant (+ (floor trial 5) 1) (+ (mod trial 5) 1) response (* rt 1000) (* beat 1000))))
+    for trial from 0
+    for response in responses
+    for rt in rts
+    for beat in beat-times
+    for probe-location in probe-locations
+    do (when (string= probe-location "T")
+        (format out "~a, ~a, ~a, ~a, ~a, ~a~%" participant (+ (floor trial *beats-per-block*) 1) (+ (mod trial *beats-per-block*) 1) response (* rt 1000) (* beat 1000)))))
 )
 
 
@@ -319,20 +413,17 @@
 )
 
 ;; Production that is fired when the threshold is reached
-;; Currently executed all the time
-(p on-rhythm-attend
-  =goal>
-    isa     subgoal
-    step    counting
-    pressed nil
+;; Executed all the time
+(p on-rhythm-response
   =temporal>
     isa time
     >= ticks 27
     ticks =ticks
   ?manual>
     state     free
+  =goal>
   ==>
-  !output! (the button was pressed at =ticks during attend)
+  !output! (the button was pressed at =ticks according to the model's rhythm)
   +manual>
     isa       punch
     hand      left
@@ -341,11 +432,7 @@
   ;; Resets threshold
   +temporal>
     isa time
-
-  ;; Make the model register that it has pressed the button
-  +goal>
-    isa     subgoal
-    step    counting
+  =goal>
     pressed t
 )
 
@@ -401,28 +488,6 @@
 
 ; Productions for mind wandering are located here
 ; Mind wandering can only start from the counting state
-(p on-rhythm-wander
-  =goal>
-    isa     subgoal
-    step    remember
-  =temporal>
-    isa time
-    >= ticks 27
-    ticks =ticks
-  ?manual>
-    state     free
-  ==>
-  !output! (the button was pressed at =ticks during mind wandering)
-  +manual>
-    isa       punch
-    hand      left
-    finger    index
-  
-  ;; Resets threshold
-  +temporal>
-    isa time
-)
-
 (p begin-wander
   =goal>
     isa    subgoal
@@ -501,6 +566,40 @@
     isa 		memory
 	-	type			nil
     :recently-retrieved nil
+)
+
+;; Productions for reacting to the probe
+(p react-to-probe
+	?visual>
+		scene-change T
+    state free
+	=visual-location>
+	?manual>
+		state 		free
+  ?goal>
+    state         free
+  ?temporal>
+    state        free
+==>
+  +manual>
+    isa       punch
+    hand      right
+    finger    middle
+	-visual-location>
+	-visual>
+  
+  !output! (The model reacted to the probe)
+
+  ;; Force the model to pay attention after the probe
+  +goal>
+    isa     subgoal
+    step    counting
+    pressed nil
+  
+  ;; Reset internal clock
+  +temporal>
+    isa time
+
 )
 
 )

@@ -42,7 +42,7 @@
 (setq *onset-time* 0.650)
 
 ;; Set the number of probes
-(setq *number-of-probes* 1)
+(setq *number-of-probes* 18)
 
 ;; Threshold for the model to press the key
 (setq *number-of-ticks* 27)
@@ -69,6 +69,7 @@
 (defvar *remaining-beats* nil)
 (defvar *probe-location* nil)
 (defvar *probe-response* nil)
+(defvar *probe-list* nil)
 
 ;; Parallellism management
 (defvar *lock* (bt:make-lock))
@@ -103,6 +104,7 @@
       (setf *all-responses* nil)
       (setf *all-rts* nil)
       (setf *beat-times* nil)
+      (setf *probe-list* nil)
 
       (mrt-trial)
       (write-results-to-file
@@ -110,7 +112,8 @@
         participant
         (reverse *all-responses*)
         (reverse *all-rts*)
-        (reverse *beat-times*)))
+        (reverse *beat-times*)
+        (reverse *probe-list*)))
     
     (reset)
   )
@@ -156,6 +159,18 @@
 
   (print (concatenate 'string "Probe location: " (write-to-string *probe-location*) " Remaining beats: " (write-to-string *remaining-beats*)))
 
+  ;; Add the probe to the list probe location - 5 times
+  (dotimes (i (- *probe-location* 5))
+    (push "F" *probe-list*))
+  
+  ;; Put the required beats for the probe
+  (dotimes (i 5)
+    (push "T" *probe-list*))
+  
+  ;; Mark all the remaining beats as false
+  (dotimes (i *remaining-beats*)
+    (push "F" *probe-list*))
+
   ;; Schedule the beats
   (dotimes (i *probe-location*)
 
@@ -175,7 +190,36 @@
 
   ;; This creates an interface for the model to interact with
   (install-device '("motor" "keyboard"))
-  (run-full-time *time-to-respond* *visible*)
+
+  ;; First, get the responses for the initial beats
+  (run-full-time (* *beat-interval* *probe-location*) *visible*)
+
+  ;; Create a window for the probe
+  (let ((window (open-exp-window "MRT Experiment"
+                               :visible *visible*
+                               :width 300
+                               :height 300
+                               :x 300
+                               :y 300)))
+
+    (add-text-to-exp-window window
+                            "It's Probe Time!"
+                            :width 30
+                            :height 30
+                            :x 145
+                            :y 150)
+  
+    (install-device window)
+
+    ;; Make the window visible for 1 second
+    ;; Change it to last until the probe is pressed later
+    (run-full-time 1 *visible*)
+    (clear-exp-window)
+  
+  )
+
+  (run-full-time (* *beat-interval* *remaining-beats*) *visible*)
+
   (remove-device '("motor" "keyboard"))
 
   (remove-act-r-command-monitor "output-key" "sart-key-press")
@@ -202,14 +246,16 @@
 )
 
 ;; Create a handler to detect the probe
+;; Schedules the remaining beats
 (defun probe-handler (model key)
 
   (declare (ignore model))
   
-  (if (and(string= key "f") (not *probe-response*))
+  ;; If the probe was not detected and the key pressed was "k"
+  (if (and(string= key "k") (not *probe-response*))
       (progn ;; Required to evaluate multiple expressions
         (print "Probe detected")
-        (setf *probe-response* "f")
+        (setf *probe-response* "k") ;; Mark that a probe was detected
         (dotimes (i *remaining-beats*)
           (setf *beat* (+ (+ (* *beat-interval* i) *onset-time*) (/ (get-time) 1000)))
           (beat-trial *beat*)
@@ -220,22 +266,25 @@
 (defun key-event-handler (model key)
   (declare (ignore model))
 
-  ; Prevent race conditions
-  (bt:with-lock-held
-  (*lock*)
-    (setf *trial-rt* (/ (get-time) 1000.0))
-    (setf *trial-response* (string key))
-    (setf *trial-done* t)
+  (if (string= key "f")
+    (progn ; Execute multiple forms
+      ;; Prevent race conditions
+      (bt:with-lock-held
+        (*lock*)
+        (setf *trial-rt* (/ (get-time) 1000.0))
+        (setf *trial-response* (string key))
+        (setf *trial-done* t)
 
-    ;; Add the response and rt to the list for saving
-    (push *trial-response* *all-responses*)
-    (push *trial-rt* *all-rts*)
-  )
+        ;; Add the response and rt to the list for saving
+        (push *trial-response* *all-responses*)
+        (push *trial-rt* *all-rts*)
+      )
+    ))
 
 )
 
 ;; Write the behavioural results to a file
-(defun write-results-to-file (name participant responses rts beat-times)
+(defun write-results-to-file (name participant responses rts beat-times probe-locations)
 
   (with-open-file
     (out
@@ -246,11 +295,13 @@
       :direction :output :if-does-not-exist :create :if-exists :supersede)
     (format out "participant, trial, beat, response, rt, beat-time~%")
     (loop
-      for trial from 0
-      for response in responses
-      for rt in rts
-      for beat in beat-times
-      do (format out "~a, ~a, ~a, ~a, ~a, ~a~%" participant (+ (floor trial 5) 1) (+ (mod trial 5) 1) response (* rt 1000) (* beat 1000))))
+    for trial from 0
+    for response in responses
+    for rt in rts
+    for beat in beat-times
+    for probe-location in probe-locations
+    do (when (string= probe-location "T")
+        (format out "~a, ~a, ~a, ~a, ~a, ~a~%" participant (+ (floor trial *beats-per-block*) 1) (+ (mod trial *beats-per-block*) 1) response (* rt 1000) (* beat 1000)))))
 )
 
 
@@ -435,5 +486,39 @@
 )
 
 (goal-focus startgoal)
+
+;; Productions for reacting to the probe
+(p react-to-probe
+	?visual>
+		scene-change T
+    state free
+	=visual-location>
+	?manual>
+		state 		free
+  ?goal>
+    state         free
+  ?temporal>
+    state        free
+==>
+  +manual>
+    isa       punch
+    hand      right
+    finger    middle
+	-visual-location>
+	-visual>
+  
+  !output! (The model reacted to the probe)
+
+  ;; Force the model to pay attention after the probe
+  +goal>
+    isa     subgoal
+    step    counting
+    pressed nil
+  
+  ;; Reset internal clock
+  +temporal>
+    isa time
+
+)
 
 )
