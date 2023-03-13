@@ -203,26 +203,18 @@
 
 ;; Create a handler to detect the probe
 (defun probe-handler (model key)
+
   (declare (ignore model))
-
-  ;; Check if the button pressed is k
-  (if (and (string= key "f") (not *probe-response*))
-
-    (setf *probe-response* "f")
-    
-    ;; Schedule the beats
-    (dotimes (i *remaining-beats*)
-
-      ;; Create a variable for the beat times
-      (setf *beat* (+ (+ (* *beat-interval* i) *onset-time*) (get-time)))
-
-      (beat-trial *beat*)
-      (push *beat* *beat-times*)
-    )
-
-  )
-
-)
+  
+  (if (and(string= key "f") (not *probe-response*))
+      (progn ;; Required to evaluate multiple expressions
+        (print "Probe detected")
+        (setf *probe-response* "f")
+        (dotimes (i *remaining-beats*)
+          (setf *beat* (+ (+ (* *beat-interval* i) *onset-time*) (/ (get-time) 1000)))
+          (beat-trial *beat*)
+          (push *beat* *beat-times*)))
+      nil))
 
 ;; Register the model's key presses (ignore the model parameter)
 (defun key-event-handler (model key)
