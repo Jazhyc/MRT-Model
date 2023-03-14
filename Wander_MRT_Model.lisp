@@ -527,13 +527,10 @@
   ;; Strengthen the dattend chunk so the model is less likely to mind wander
   -retrieval>
 
-  ;; By setting the pressed variable to t, we force the model to wait for the beat
   =goal>
 		isa			subgoal
 		step		counting
     pressed =pressed
-  
-  -aural-location>
 )
 
 ; Production that is fired when the model retrieves a random memory
