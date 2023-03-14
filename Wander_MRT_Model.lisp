@@ -472,8 +472,6 @@
   =temporal>
     isa time
     ticks =ticks
-  ?retrieval>
-    state         free
   ==>
   !output! (the tick counter was =ticks when model heard sound and already pressed the button)
   ;; Reset ticks
@@ -520,8 +518,6 @@
   =temporal>
     isa time
     ticks =ticks
-  ?retrieval>
-    state         free
   ==>
   !output! (the tick counter was =ticks when the model was late and did not press the button)
   +manual>
