@@ -483,9 +483,9 @@
 ; Mind wandering can only start from the counting state
 (p begin-wander
   =goal>
-    isa    subgoal
-    step   counting
     pressed =pressed
+  ?goal>
+    state     free
   =retrieval>
     isa           goal
     state         wander
@@ -514,21 +514,15 @@
 ; Production that reminds the model to go back to the task
 (p back-to-task
   =goal>
-    isa       subgoal
-    step      remember
+    pressed =pressed
+  ?goal>
+    state     free
   =retrieval>
     isa       memory
     type      dattend
   ?retrieval>
     state     free
-  - state     error
 
-  ;; Adding this production attends to the chunk in the aural location buffer
-  ;; It ensures that it won't interfere with future productions
-  ;; There should always be a chunk in the aural location buffer since the default decay value is 3 seconds
-  =aural-location>
-    isa        audio-event
-    location   external
 ==>
   ;; Strengthen the dattend chunk so the model is less likely to mind wander
   -retrieval>
@@ -537,14 +531,13 @@
   =goal>
 		isa			subgoal
 		step		counting
-    pressed t
+    pressed =pressed
+  
+  -aural-location>
 )
 
 ; Production that is fired when the model retrieves a random memory
 (p wander-loop
-  =goal>
-    isa       subgoal
-    step      remember
   =retrieval>
     isa           memory
   - type          dattend
@@ -571,6 +564,7 @@
 		state 		free
   ?goal>
     state         free
+  =goal>
   ?temporal>
     state        free
 ==>
