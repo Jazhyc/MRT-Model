@@ -461,6 +461,31 @@
     pressed nil
 )
 
+(p hear-sound-early-wander
+  =goal>
+    isa     subgoal
+    step    remember
+    pressed t
+  =aural-location>
+    isa        audio-event
+    location   external
+  =temporal>
+    isa time
+    ticks =ticks
+  ?retrieval>
+    state         free
+  ==>
+  !output! (the tick counter was =ticks when model heard sound and already pressed the button)
+  ;; Reset ticks
+  +temporal>
+    isa time
+  -goal>
+  +goal>
+    isa     subgoal
+    step    remember
+    pressed nil
+)
+
 ;; Production used to reset the threshold when the model is too late
 (p hear-sound-and-press
   =goal>
@@ -473,6 +498,30 @@
   =temporal>
     isa time
     ticks =ticks
+  ==>
+  !output! (the tick counter was =ticks when the model was late and did not press the button)
+  +manual>
+    isa       punch
+    hand      left
+    finger    index
+  ;; Reset ticks
+  +temporal>
+    isa time
+)
+
+(p hear-sound-and-press-wander
+  =goal>
+    isa     subgoal
+    step    remember
+    pressed nil
+  =aural-location>
+    isa        audio-event
+    location   external
+  =temporal>
+    isa time
+    ticks =ticks
+  ?retrieval>
+    state         free
   ==>
   !output! (the tick counter was =ticks when the model was late and did not press the button)
   +manual>
