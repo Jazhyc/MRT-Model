@@ -440,8 +440,6 @@
 ;; Only used when attending
 (p hear-sound-early
   =goal>
-    isa     subgoal
-    step    counting
     pressed t
   =aural-location>
     isa        audio-event
@@ -454,63 +452,13 @@
   ;; Reset ticks
   +temporal>
     isa time
-  -goal>
-  +goal>
-    isa     subgoal
-    step    counting
-    pressed nil
-)
-
-(p hear-sound-early-wander
   =goal>
-    isa     subgoal
-    step    remember
-    pressed t
-  =aural-location>
-    isa        audio-event
-    location   external
-  =temporal>
-    isa time
-    ticks =ticks
-  ==>
-  !output! (the tick counter was =ticks when model heard sound and already pressed the button)
-  ;; Reset ticks
-  +temporal>
-    isa time
-  -goal>
-  +goal>
-    isa     subgoal
-    step    remember
     pressed nil
 )
 
 ;; Production used to reset the threshold when the model is too late
 (p hear-sound-and-press
   =goal>
-    isa     subgoal
-    step    counting
-    pressed nil
-  =aural-location>
-    isa        audio-event
-    location   external
-  =temporal>
-    isa time
-    ticks =ticks
-  ==>
-  !output! (the tick counter was =ticks when the model was late and did not press the button)
-  +manual>
-    isa       punch
-    hand      left
-    finger    index
-  ;; Reset ticks
-  +temporal>
-    isa time
-)
-
-(p hear-sound-and-press-wander
-  =goal>
-    isa     subgoal
-    step    remember
     pressed nil
   =aural-location>
     isa        audio-event
@@ -547,7 +495,7 @@
 ==>
 
   ;; We assume that the model still has knowledge of whether or not it has pressed the button
-  +goal>
+  =goal>
 		isa			subgoal
 		step		remember
     pressed =pressed
@@ -586,7 +534,7 @@
   -retrieval>
 
   ;; By setting the pressed variable to t, we force the model to wait for the beat
-  +goal>
+  =goal>
 		isa			subgoal
 		step		counting
     pressed t
@@ -636,7 +584,7 @@
   !output! (The model reacted to the probe)
 
   ;; Force the model to pay attention after the probe
-  +goal>
+  =goal>
     isa     subgoal
     step    counting
     pressed nil
