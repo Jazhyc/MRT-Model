@@ -418,12 +418,12 @@
 
   ; Mind wandering chunks have equal base activation
   ; They should not take too much time to be retrieved
-  (dattend    1000  -1000)
-  (d1         1000  -1000)
-  (d2         1000  -1000)
-  (d3         1000  -1000)
-  (d4         1000  -1000)
-  (d5         1000  -1000)
+  (dattend    1000  1000)
+  (d1         1000  1000)
+  (d2         1000  1000)
+  (d3         1000  1000)
+  (d4         1000  1000)
+  (d5         1000  1000)
 
   ;; We expect these to be well practiced so they should be retrieved quickly
   ;; I wish arrays and loops existed in act r
@@ -485,14 +485,18 @@
   =goal>
     isa     subgoal
     step    counting
+    threshold =threshold
+  ?aural-location>
+    buffer  empty  
   ?retrieval>
     state         free
   - state         error
   =temporal>
     isa time
     ticks =ticks
+  < ticks =threshold
 ==>
-  !output! (the tick counter was =ticks when model checked current goal)
+  !output! (The tick counter was =ticks when the model checked the current goal)
   +retrieval>
     isa           goal
   - state         nil
@@ -731,6 +735,12 @@
   =goal>
     isa    subgoal
     step   remember
+    threshold =threshold
+  ?aural-location>
+    buffer  empty 
+  =temporal>
+    isa time
+  < ticks =threshold 
   =retrieval>
     isa           memory
   - type          dattend

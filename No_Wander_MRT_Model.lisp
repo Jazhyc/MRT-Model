@@ -469,12 +469,16 @@
   =goal>
     isa     subgoal
     step    counting
+    threshold =threshold
+  ?aural-location>
+    buffer  empty  
   ?retrieval>
     state         free
   - state         error
   =temporal>
     isa time
     ticks =ticks
+  < ticks =threshold
 ==>
   !output! (The tick counter was =ticks when the model checked the current goal)
   +retrieval>
