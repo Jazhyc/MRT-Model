@@ -341,7 +341,8 @@
 
 (chunk-type beginning label)
 (chunk-type goal state)
-(chunk-type subgoal step pressed)
+(chunk-type subgoal step pressed threshold)
+(chunk-type number num1 num2)
 
 ; New chunk type for mind wandering
 (chunk-type memory type)
@@ -356,12 +357,50 @@
   ; New chunk for implementing mind wandering
   ;; (wander isa goal state wander)
 
-  (counting isa subgoal step counting pressed nil)
+  (counting isa subgoal step counting pressed nil threshold 27)
+  (increase-tick isa subgoal step increase-tick pressed nil threshold 27)
+  (decrease-tick isa subgoal step decrease-tick pressed nil threshold 27)
   (remember isa subgoal step remember)
 
   ; Create chunks for mind wandering
   (dattend isa memory type dattend)
   (d1 isa memory type d1)
+
+  ;; Chunks for numbers
+  (one isa number num1 1 num2 2)
+  (two isa number num1 2 num2 3)
+  (three isa number num1 3 num2 4)
+  (four isa number num1 4 num2 5)
+  (five isa number num1 5 num2 6)
+  (six isa number num1 6 num2 7)
+  (seven isa number num1 7 num2 8)
+  (eight isa number num1 8 num2 9)
+  (nine isa number num1 9 num2 10)
+  (ten isa number num1 10 num2 11)
+  (eleven isa number num1 11 num2 12)
+  (twelve isa number num1 12 num2 13)
+  (thirteen isa number num1 13 num2 14)
+  (fourteen isa number num1 14 num2 15)
+  (fifteen isa number num1 15 num2 16)
+  (sixteen isa number num1 16 num2 17)
+  (seventeen isa number num1 17 num2 18)
+  (eighteen isa number num1 18 num2 19)
+  (nineteen isa number num1 19 num2 20)
+  (twenty isa number num1 20 num2 21)
+  (twentyone isa number num1 21 num2 22)
+  (twentytwo isa number num1 22 num2 23)
+  (twentythree isa number num1 23 num2 24)
+  (twentyfour isa number num1 24 num2 25)
+  (twentyfive isa number num1 25 num2 26)
+  (twentysix isa number num1 26 num2 27)
+  (twentyseven isa number num1 27 num2 28)
+  (twentyeight isa number num1 28 num2 29)
+  (twentynine isa number num1 29 num2 30)
+  (thirty isa number num1 30 num2 31)
+  (thirtyone isa number num1 31 num2 32)
+  (thirtytwo isa number num1 32 num2 33)
+  (thirtythree isa number num1 33 num2 34)
+  (thirtyfour isa number num1 34 num2 35)
 
 )
 
@@ -369,7 +408,43 @@
 
 ; Attend and wander have equal base activation
   (attend      10000  -10000)
-  ;; (wander      10000  -10000)
+
+  ;; We expect these to be well practiced so they should be retrieved quickly
+  ;; I wish arrays and loops existed in act r
+  (one        10000  10000)
+  (two        10000  10000)
+  (three        10000  10000)
+  (four        10000  10000)
+  (five        10000  10000)
+  (six        10000  10000)
+  (seven        10000  10000)
+  (eight        10000  10000)
+  (nine        10000  10000)
+  (ten        10000  10000)
+  (eleven        10000  10000)
+  (twelve        10000  10000)
+  (thirteen        10000  10000)
+  (fourteen        10000  10000)
+  (fifteen        10000  10000)
+  (sixteen        10000  10000)
+  (seventeen        10000  10000)
+  (eighteen        10000  10000)
+  (nineteen        10000  10000)
+  (twenty        10000  10000)
+  (twentyone        10000  10000)
+  (twentytwo        10000  10000)
+  (twentythree      10000  10000)
+  (twentyfour       10000  10000)
+  (twentyfive       10000  10000)
+  (twentysix        10000  10000)
+  (twentyseven      10000  10000)
+  (twentyeight      10000  10000)
+  (twentynine      10000  10000)
+  (thirty      10000  10000)
+  (thirtyone      10000  10000)
+  (thirtytwo      10000  10000)
+  (thirtythree      10000  10000) 
+  (thirtyfour      10000  10000)
 )
 
 (p start-task
@@ -385,6 +460,7 @@
     isa     subgoal
     step    counting
     pressed nil
+    threshold 27 ;; Default value based on theoretical estimate
   +temporal>
     isa time
 )
@@ -413,9 +489,10 @@
     isa     subgoal
     step    counting
     pressed nil
+    threshold =threshold
   =temporal>
     isa time
-    >= ticks 27
+    >= ticks =threshold
     ticks =ticks
   ?manual>
     state     free
@@ -431,7 +508,7 @@
     isa time
 
   ;; Make the model register that it has pressed the button
-  +goal>
+  =goal>
     isa     subgoal
     step    counting
     pressed t
@@ -444,36 +521,45 @@
     isa     subgoal
     step    counting
     pressed t
+    threshold =threshold
   =aural-location>
     isa        audio-event
     location   external
   =temporal>
     isa time
     ticks =ticks
+  ?retrieval>
+    state         free
   ==>
   !output! (the tick counter was =ticks when model heard sound and already pressed the button)
   ;; Reset ticks
   +temporal>
     isa time
-  -goal>
-  +goal>
+  =goal>
     isa     subgoal
-    step    counting
+    step    increase-tick
     pressed nil
+  +retrieval>
+    isa           number
+    num1          =threshold
+  
 )
 
 ;; Production used to reset the threshold when the model is too late
-(p hear-sound-and-press
+(p hear-sound-and-press-late
   =goal>
     isa     subgoal
     step    counting
     pressed nil
+    threshold =threshold
   =aural-location>
     isa        audio-event
     location   external
   =temporal>
     isa time
     ticks =ticks
+  ?retrieval>
+    state         free
   ==>
   !output! (the tick counter was =ticks when the model was late and did not press the button)
   +manual>
@@ -483,6 +569,50 @@
   ;; Reset ticks
   +temporal>
     isa time
+  =goal>
+    isa     subgoal
+    step    decrease-tick
+    pressed nil
+  +retrieval>
+    isa           number
+    num2          =threshold
+)
+
+(p increase-threshold
+  =goal>
+    isa     subgoal
+    step    increase-tick
+    pressed nil
+  =retrieval>
+    isa           number
+    num2          =threshold
+==>
+  !output! (The model increased the threshold to =threshold ticks)
+
+  ;; Increase the threshold
+  =goal>
+    isa     subgoal
+    step    counting
+    pressed nil
+    threshold =threshold
+)
+
+(p decrease-threshold
+  =goal>
+    isa     subgoal
+    step    decrease-tick
+    pressed nil
+  =retrieval>
+    isa           number
+    num1          =threshold
+==>
+    !output! (The model decreased the threshold to =threshold ticks)
+    ;; Decrease the threshold
+    =goal>
+      isa     subgoal
+      step    counting
+      pressed nil
+      threshold =threshold
 )
 
 (goal-focus startgoal)
@@ -499,6 +629,7 @@
     state         free
   ?temporal>
     state        free
+  =goal>
 ==>
   +manual>
     isa       punch
@@ -510,7 +641,7 @@
   !output! (The model reacted to the probe)
 
   ;; Force the model to pay attention after the probe
-  +goal>
+  =goal>
     isa     subgoal
     step    counting
     pressed nil
