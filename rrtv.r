@@ -64,13 +64,17 @@ nowanderSE <- std(RRTv_by_trial$attend)
 
 # Plot, code taken from week 3 assignment
 
-condition <- c("Wandering", "No Wandering")
-mean <- c(mean(RRTv_by_trial$wander),mean(RRTv_by_trial$attend))
-error <- c(wanderSE, nowanderSE)
-plotMeans <- data.frame(condition, mean, error)
+df<-tribble(
+  ~State, ~Type, ~Mean, ~Se,
+  "Wandering", "Human", 8.29, (0.6 / sqrt(18)),
+  "Wandering", "Model", mean(RRTv_by_trial$wander), wanderSE,
+  "Attending", "Human", 8.01, (0.78 / sqrt(18)),
+  "Attending", "Model", mean(RRTv_by_trial$attend), nowanderSE
+)
 
-ggplot(data = plotMeans, aes(y=mean, x=condition, ymin=mean-error, ymax=mean+error)) +
-  geom_col(width=0.7) +
-  geom_errorbar(width=0.1) +
+ggplot(df, aes(x = factor(State), y = Mean, fill = Type, colour = Type)) + 
+  geom_bar(stat = "identity", position = "dodge", alpha = 0.5) +
+  geom_errorbar(aes(ymin=Mean-Se, ymax=Mean+Se), position = position_dodge(0.9), width = 0.25) +
   labs(y="Transformed RRT Variance", x="Model Type")
 
+t.test(RRTv_by_trial$wander, RRTv_by_trial$attend)
