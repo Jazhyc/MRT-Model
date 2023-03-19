@@ -1,8 +1,6 @@
-
-## The easiest way to do this is to read the trace file line by line wihle keeping track of the state of the model
-
 library(stringr)
 library(data.table)
+library(tidyverse)
 
 data_path <- "output-nowander/"
 
@@ -86,3 +84,22 @@ for(i in 1:n) {
   
   
 }
+
+# Remove the additional 0s
+NoWanderTicks <- subset(NoWanderTicks, NoWanderTicks$ticks != 0)
+WanderTicks <- subset(WanderTicks, WanderTicks$ticks != 0)
+
+t.test(NoWanderTicks$ticks, WanderTicks$ticks)
+
+se <- function(x) sd(x) / sqrt(length(x))
+
+df<-tribble(
+  ~State, ~Type, ~Mean, ~Se,
+  "Attending", "Model", mean(NoWanderTicks$ticks), se(NoWanderTicks$ticks),
+  "Wandering", "Model", mean(WanderTicks$ticks), se(NoWanderTicks$ticks),
+)
+
+ggplot(df, aes(x = factor(State), y = Mean, fill = State)) + 
+  geom_bar(stat = "identity", position = "dodge", color="black", alpha = 0.5) +
+  geom_errorbar(aes(ymin=Mean-Se, ymax=Mean+Se,), position = position_dodge(0.9), width = 0.25) +
+  labs(y="Average Tick Threshold", x="Model") + coord_cartesian(ylim=c(20, 27))
