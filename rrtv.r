@@ -72,9 +72,10 @@ df<-tribble(
   "Attending", "Model", mean(RRTv_by_trial$attend), nowanderSE
 )
 
-ggplot(df, aes(x = factor(State), y = Mean, fill = Type, colour = Type)) + 
-  geom_bar(stat = "identity", position = "dodge", alpha = 0.5) +
-  geom_errorbar(aes(ymin=Mean-Se, ymax=Mean+Se), position = position_dodge(0.9), width = 0.25) +
+ggplot(df, aes(x = factor(State), y = Mean, fill = Type)) + 
+  geom_bar(stat = "identity", position = "dodge", color="black", alpha = 0.5) +
+  geom_errorbar(aes(ymin=Mean-Se, ymax=Mean+Se,), position = position_dodge(0.9), width = 0.25) +
   labs(y="Transformed RRT Variance", x="State")
 
-t.test(RRTv_by_trial$wander, RRTv_by_trial$attend)
+t.test(RRTv_by_trial$wander, RRTv_by_trial$attend, alternative="greater")
+
