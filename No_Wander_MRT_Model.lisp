@@ -501,7 +501,7 @@
   ?manual>
     state     free
   ==>
-  !output! (the button was pressed at =ticks during attend)
+  !output! (the button was pressed at =ticks during attend and the threshold was =threshold)
   +manual>
     isa       punch
     hand      left
@@ -565,7 +565,7 @@
   ?retrieval>
     state         free
   ==>
-  !output! (the tick counter was =ticks when the model was late and did not press the button)
+  !output! (the tick counter was =ticks when the model was late and did not press the button and the threshold was =threshold)
   +manual>
     isa       punch
     hand      left

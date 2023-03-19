@@ -514,7 +514,7 @@
   =goal>
     threshold =threshold
   ==>
-  !output! (the button was pressed at =ticks according to the model's rhythm)
+  !output! (the button was pressed at =ticks according to the model's rhythm and the threshold was =threshold)
   +manual>
     isa       punch
     hand      left
@@ -597,7 +597,7 @@
   ?retrieval>
     state         free
   ==>
-  !output! (the tick counter was =ticks when the model was late and did not press the button during attend)
+  !output! (the tick counter was =ticks when the model was late and did not press the button during attend and the threshold was =threshold)
   +manual>
     isa       punch
     hand      left
@@ -628,7 +628,7 @@
     isa time
     ticks =ticks
   ==>
-  !output! (the tick counter was =ticks when the model was late and did not press the button during wander)
+  !output! (the tick counter was =ticks when the model was late and did not press the button during wander and the threshold was =threshold)
   +manual>
     isa       punch
     hand      left
@@ -712,14 +712,11 @@
 ; Production that reminds the model to go back to the task
 (p back-to-task
   =goal>
-    pressed =pressed
   ?goal>
     state     free
   =retrieval>
     isa       memory
     type      dattend
-  ?retrieval>
-    state     free
 
 ==>
   ;; Strengthen the dattend chunk so the model is less likely to mind wander
@@ -727,7 +724,6 @@
   =goal>
 		isa			subgoal
 		step		counting
-    pressed =pressed
 )
 
 ; Production that is fired when the model retrieves a random memory
