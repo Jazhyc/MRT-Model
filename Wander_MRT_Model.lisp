@@ -15,7 +15,7 @@
 (defvar *time-to-respond* 2)
 (defvar *beats-before-probe* 5)
 (defvar *onset-time* 0.2)
-(defvar *number-of-ticks 26)
+(defvar *number-of-ticks* 26)
 (defvar *beats-per-block* 50)
 
 ;; Number of probes that there must be in the experiment
@@ -336,7 +336,7 @@
   :record-ticks nil
 
   ;; Affects noisiness of the ticks
-  ;; :time-noise 0.005
+  :time-noise 0.004
 
 )
 
@@ -362,7 +362,7 @@
   (counting isa subgoal step counting pressed nil threshold 27)
   (increase-tick isa subgoal step increase-tick pressed nil threshold 27)
   (decrease-tick isa subgoal step decrease-tick pressed nil threshold 27)
-  (remember isa subgoal step remember)
+  (remember isa subgoal step remember pressed nil threshold 27)
 
   ; Create chunks for mind wandering
   (dattend isa memory type dattend)
@@ -370,7 +370,6 @@
   (d2 isa memory type d2)
   (d3 isa memory type d3)
   (d4 isa memory type d4)
-  (d5 isa memory type d5)
 
   ;; Chunks for numbers
   (one isa number num1 1 num2 2)
@@ -423,7 +422,6 @@
   (d2         1000  1000)
   (d3         1000  1000)
   (d4         1000  1000)
-  (d5         1000  1000)
 
   ;; We expect these to be well practiced so they should be retrieved quickly
   ;; I wish arrays and loops existed in act r
@@ -596,6 +594,8 @@
     ticks =ticks
   ?retrieval>
     state         free
+  ?manual>
+    state         free
   ==>
   !output! (the tick counter was =ticks when the model was late and did not press the button during attend and the threshold was =threshold)
   +manual>
@@ -627,6 +627,8 @@
   =temporal>
     isa time
     ticks =ticks
+  ?manual>
+    state         free
   ==>
   !output! (the tick counter was =ticks when the model was late and did not press the button during wander and the threshold was =threshold)
   +manual>

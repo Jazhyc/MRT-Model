@@ -336,7 +336,7 @@
   :record-ticks nil
 
   ;; Affects noisiness of the ticks
-  ;; :time-noise 0.005
+  :time-noise 0.004
 )
 
 (chunk-type beginning label)
