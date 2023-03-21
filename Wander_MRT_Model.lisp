@@ -411,9 +411,10 @@
 
 (set-base-levels
 
-; Attend and wander have equal base activation
+; Attend has a higher base activation than wander
+; We expect this to be the case due to heavy load of the MRT
   (attend      10000  -10000)
-  (wander      10000  -10000)
+  (wander      8000  -8000)
 
   ; Mind wandering chunks have equal base activation
   ; They should not take too much time to be retrieved
