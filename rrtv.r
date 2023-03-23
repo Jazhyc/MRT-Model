@@ -31,9 +31,11 @@ nowanderdat$beat.time <- as.numeric(nowanderdat$beat.time)
 rrt<-with(nowanderdat, rt - beat.time)
 nowanderdat<-cbind(nowanderdat,rrt)
 # Calculate RRTv as the natural log transformed variance in RRT
-RRTv_by_trial_attend <- nowanderdat %>% group_by(trial)
-RRTv_by_trial_attend <- RRTv_by_trial_attend %>% summarise(attend = var(rrt))
-RRTv_by_trial_attend$attend <- log(RRTv_by_trial_attend$attend)
+RRTv_by_participant_attend <- nowanderdat %>% group_by(trial, participant)
+RRTv_by_participant_attend <- RRTv_by_participant_attend %>% summarise(attend = var(rrt))
+RRTv_by_participant_attend <- RRTv_by_participant_attend %>% group_by(participant) %>% summarise(attend)
+RRTv_by_participant_attend <- RRTv_by_participant_attend %>% summarise(attend = mean(attend))
+RRTv_by_participant_attend$attend <- log(RRTv_by_participant_attend$attend)
 rm(rrt)
 
 # Read csv files to wanderdat
@@ -49,16 +51,18 @@ wanderdat$beat.time <- as.numeric(wanderdat$beat.time)
 rrt<-with(wanderdat, rt - beat.time)
 wanderdat<-cbind(wanderdat,rrt)
 
-RRTv_by_trial_wander <- wanderdat %>% group_by(trial)
-RRTv_by_trial_wander <- RRTv_by_trial_wander %>% summarise(wander = var(rrt))
-RRTv_by_trial_wander$wander <- log(RRTv_by_trial_wander$wander)
+RRTv_by_participant_wander <- wanderdat %>% group_by(trial, participant)
+RRTv_by_participant_wander <- RRTv_by_participant_wander %>% summarise(wander = var(rrt))
+RRTv_by_participant_wander <- RRTv_by_participant_wander %>% group_by(participant) %>% summarise(wander)
+RRTv_by_participant_wander <- RRTv_by_participant_wander %>% summarise(wander = mean(wander))
+RRTv_by_participant_wander$wander <- log(RRTv_by_participant_wander$wander)
 rm(rrt)
 
 # Merge RRTv dataframes for attend and wander into a single dataframe. Calculate standard error of variance.
 
-RRTv_by_trial <- merge(RRTv_by_trial_attend, RRTv_by_trial_wander)
-rm(RRTv_by_trial_attend)
-rm(RRTv_by_trial_wander)
+RRTv_by_trial <- merge(RRTv_by_participant_attend, RRTv_by_participant_wander)
+rm(RRTv_by_participant_attend)
+rm(RRTv_by_participant_wander)
 wanderSE <- std(RRTv_by_trial$wander)
 nowanderSE <- std(RRTv_by_trial$attend)
 
