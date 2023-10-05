@@ -102,4 +102,5 @@ df<-tribble(
 ggplot(df, aes(x = factor(State), y = Mean, fill = State)) + 
   geom_bar(stat = "identity", position = "dodge", color="black", alpha = 0.5) +
   geom_errorbar(aes(ymin=Mean-Se, ymax=Mean+Se,), position = position_dodge(0.9), width = 0.25) +
-  labs(y="Average Tick Threshold", x="Model") + coord_cartesian(ylim=c(20, 27))
+  labs(y="Average Tick Threshold", x="Model") + coord_cartesian(ylim=c(20, 27)) +
+  theme(legend.position = "none")

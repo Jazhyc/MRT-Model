@@ -70,9 +70,9 @@ nowanderSE <- std(RRTv_by_trial$attend)
 
 df<-tribble(
   ~State, ~Type, ~Mean, ~Se,
-  "Wandering", "Human", 8.29, (0.6 / sqrt(18)),
+  "Wandering", "Human", 8.29, (0.6 / sqrt(74)),
   "Wandering", "Model", mean(RRTv_by_trial$wander), wanderSE,
-  "Attending", "Human", 8.01, (0.78 / sqrt(18)),
+  "Attending", "Human", 8.01, (0.78 / sqrt(74)),
   "Attending", "Model", mean(RRTv_by_trial$attend), nowanderSE
 )
 
